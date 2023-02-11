@@ -220,6 +220,7 @@ class TestHTTPClient(unittest.TestCase):
             ]
         for url in urls:
             try:
+                print(url)
                 req = http.GET( url )
             except Exception as e:
                 print("An Exception was thrown for %s" % url)

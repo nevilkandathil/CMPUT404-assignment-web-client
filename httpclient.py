@@ -38,6 +38,10 @@ class HTTPClient(object):
 
     def connect(self, host, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
+        if not port:
+            port = 80
+        
         self.socket.connect((host, port))
         return None
 
@@ -47,10 +51,11 @@ class HTTPClient(object):
 
     def get_headers(self,data):
         """
-        Skips first line of response and return all headers until the body
+        Skips first line of response and return all headers until the body.
         """
 
-        # responses from assignment 1 contains \n\n. Resposnes from assignment 2 tests contains \r\n
+        # responses from assignment 1 contains \n\n. Resposnes from assignment 2 tests contains 
+        # \r\n\r\n as the spearator between headers and body
         temp_split_1 = data.split("\n\n", 2)
         temp_split_2 = data.split("\r\n\r\n", 2)
         split_data = temp_split_1
@@ -62,7 +67,9 @@ class HTTPClient(object):
         return headers
 
     def get_body(self, data):
-        # responses from assignment 1 contains \n\n. Resposnes from assignment 2 tests contains \r\n
+        """
+        Returns the body of the response.
+        """
         temp_split_1 = data.split("\n\n", 2)
         temp_split_2 = data.split("\r\n\r\n", 2)
         split_data = temp_split_1
@@ -95,7 +102,7 @@ class HTTPClient(object):
         code = 500
         body = ""
         
-        # parse host and port from url string
+        # parse host and port from url string - reffered https://eclass.srv.ualberta.ca/mod/forum/discuss.php?d=2197098#p5682934
         host = urllib.parse.urlparse(url).hostname
         port = urllib.parse.urlparse(url).port
         path = urllib.parse.urlparse(url).path
@@ -103,32 +110,23 @@ class HTTPClient(object):
         if path == "":
             path = "/"
         
-        if not port:
-            port = 80
-        
         # connect to host
         self.connect(host, port)
 
         # send GET request - reffered class notes part 5 for headers
-        
         req = f"GET {path} HTTP/1.1\r\nHost:{host}\r\nConnection:close\r\nAccept:*/*\r\nAccept-Charset:utf-8\r\n\r\n"
-        print(req)
         self.sendall(req)
 
-        
-
-        # print("Start receiving...")
+        # receive data from socket
         data = self.recvall(self.socket)
-        print(repr(data))
-        # print("Finished receiving!!!")
-        
         code = self.get_code(data)
         body = self.get_body(data)
-        print(code)
-        print(body)
-        # headers = self.get_headers(data)
-        # print(body)
-        # print(headers)
+
+        print()
+        print("***********************")
+        print("*    GET response    *")
+        print("***********************")
+        print(data)
 
         self.close()
 
@@ -149,9 +147,6 @@ class HTTPClient(object):
         if path == "":
             path = "/"
 
-        if not port:
-            port = 80
-
         # there is some data to be posted in the args variable, encode it using urlencode
         if args:
             content = urllib.parse.urlencode(args)
@@ -159,17 +154,21 @@ class HTTPClient(object):
         # connect to host
         self.connect(host, port)
 
-        # send GET request - reffered class notes part 5 for headers
+        # send POST request - reffered class notes part 5 for headers
         req = f"POST {path} HTTP/1.1 \r\nHost:{host}\r\nConnection:close\r\nAccept:*/*\r\nAccept-Charset:utf-8\r\nContent-Length:{len(content)}\r\nContent-Type:application/x-www-form-urlencoded\r\n\r\n{content}"
         self.sendall(req)
 
-        # print("Start receiving...")
+        # receive data from socket
         data = self.recvall(self.socket)
-        # print("Finished receiving!!!")
-        
         code = self.get_code(data)
         body = self.get_body(data)
-        # headers = self.get_headers(data)
+        
+        print()
+        print("***********************")
+        print("*    POST response    *")
+        print("***********************")
+        print(data)
+        
         self.close()
         
         return HTTPResponse(code, body)
@@ -190,9 +189,3 @@ if __name__ == "__main__":
         print(client.command( sys.argv[2], sys.argv[1] ))
     else:
         print(client.command( sys.argv[1] ))
-
-
-    http = HTTPClient()
-    req = http.GET("http://%s:%d" % ("localhost",8080) )
-    
-    # print(req)
